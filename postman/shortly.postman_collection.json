@@ -1,0 +1,98 @@
+{
+  "info": {
+    "name": "Shortly - URL Shortener API",
+    "description": "Postman collection for Shortly URL shortener with click analytics",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "shortCode",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Shorten URL (valid)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "  const json = pm.response.json();",
+              "  pm.collectionVariables.set('shortCode', json.shortCode);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"longUrl\": \"https://example.com\"\n}"
+        },
+        "url": "{{baseUrl}}/api/shorten"
+      }
+    },
+    {
+      "name": "Shorten URL (invalid)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"longUrl\": \"not-a-url\"\n}"
+        },
+        "url": "{{baseUrl}}/api/shorten"
+      }
+    },
+    {
+      "name": "Redirect (exists)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/{{shortCode}}"
+      }
+    },
+    {
+      "name": "Redirect (not found)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/zzzzzz"
+      }
+    },
+    {
+      "name": "Stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/stats/{{shortCode}}"
+      }
+    }
+  ]
+}
