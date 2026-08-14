@@ -30,6 +30,7 @@ npm run test:db        # verify DB connection + tables
 
 | Method | Path | Status | Description |
 |--------|------|--------|-------------|
+| GET | `/` | 200 | API info / endpoint index |
 | GET | `/health` | 200 | Health check for deployment |
 | POST | `/api/shorten` | 201 | Create short URL from `{ "longUrl": "..." }` |
 | POST | `/api/shorten` | 400 | Invalid or missing URL |

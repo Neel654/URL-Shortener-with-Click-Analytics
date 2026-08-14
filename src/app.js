@@ -9,6 +9,19 @@ const app = express();
 
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    name: 'Shortly',
+    description: 'URL Shortener API with click analytics',
+    endpoints: {
+      health: 'GET /health',
+      shorten: 'POST /api/shorten',
+      redirect: 'GET /:shortCode',
+      stats: 'GET /api/stats/:shortCode',
+    },
+  });
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
