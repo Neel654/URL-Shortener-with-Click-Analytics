@@ -1,107 +1,119 @@
-# Shortly — URL Shortener API with Analytics (2026)
+# Shortly — URL Shortener with Click Analytics
 
-A REST API like bit.ly: shorten long URLs, redirect via short codes, and track click analytics (totals, daily breakdown, top referrers).
+Shortly is a lightweight URL shortener API (like bit.ly) with click tracking and analytics. It provides a web UI to create short links, a JSON API, and endpoints to view daily and aggregate click statistics including top referrers.
 
-## Stack
+Features
+- Shorten long URLs to compact short codes (Base62-encoded auto-increment IDs)
+- Redirect short codes to original URLs (302)
+- Record clicks with referrer, user-agent and timestamp
+- Aggregate analytics: total clicks, daily breakdown, top referrers
+- Small, dependency-light Node.js + Express codebase
+- PostgreSQL-backed storage (tested with Neon)
 
-- **Node.js + Express** — REST API
-- **PostgreSQL (Neon)** — persistent storage
-- **pg** — parameterized queries (SQL injection safe)
+Live demo
+- https://url-shortener-with-click-analytics.onrender.com/
 
-## Quick start
-
+Quick start (development)
+1. Install
 ```bash
 npm install
-cp .env.example .env   # add your DATABASE_URL
-npm run migrate        # create tables (or run db/schema.sql in Neon)
-npm run dev            # start server on http://localhost:3000
+cp .env.example .env   # edit DATABASE_URL and BASE_URL
+```
+2. Prepare database
+```bash
+npm run migrate        # creates tables (or run db/schema.sql manually)
 npm run test:db        # verify DB connection + tables
 ```
-
-## Environment variables
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Neon PostgreSQL connection string |
-| `PORT` | Server port (default `3000`) |
-| `BASE_URL` | Public base URL for generated short links |
-
-## Web UI
-
-Open `GET /` in a browser for a bit.ly-style page — paste a long URL to get a short link, then look up click analytics by short code.
-
-## API endpoints
-
-| Method | Path | Status | Description |
-|--------|------|--------|-------------|
-| GET | `/` | 200 | Web UI (HTML) |
-| GET | `/api` | 200 | API info / endpoint index |
-| GET | `/health` | 200 | Health check for deployment |
-| POST | `/api/shorten` | 201 | Create short URL from `{ "longUrl": "..." }` |
-| POST | `/api/shorten` | 400 | Invalid or missing URL |
-| GET | `/:shortCode` | 302 | Redirect to long URL + log click |
-| GET | `/:shortCode` | 404 | Short code not found |
-| GET | `/api/stats/:shortCode` | 200 | Click analytics |
-| GET | `/api/stats/:shortCode` | 404 | Short code not found |
-
-### Example: shorten
-
+3. Run server
 ```bash
-curl -X POST http://localhost:3000/api/shorten \
+npm run dev            # starts server on http://localhost:3000
+```
+
+Environment variables
+- DATABASE_URL — PostgreSQL connection string (Neon or other)
+- PORT — server port (default: 3000)
+- BASE_URL — public base URL for generated short links (e.g., https://url-shortener-with-click-analytics.onrender.com)
+
+Usage
+
+Web UI
+- Visit GET / in your browser for a simple bit.ly-style page to shorten URLs and view stats.
+
+API Endpoints
+- GET /                — Web UI (HTML)
+- GET /api             — API info / endpoint index
+- GET /health          — Health check
+- POST /api/shorten    — Create short URL. Body: { "longUrl": "https://..." } → 201
+- GET /:shortCode      — Redirect to long URL (302) and log click
+- GET /api/stats/:shortCode — Get click analytics (totals, daily, referrers)
+
+Example: shorten
+```bash
+curl -X POST https://url-shortener-with-click-analytics.onrender.com/api/shorten \
   -H "Content-Type: application/json" \
   -d '{"longUrl":"https://example.com"}'
 ```
-
+Response:
 ```json
 {
   "shortCode": "b",
-  "shortUrl": "http://localhost:3000/b",
+  "shortUrl": "https://url-shortener-with-click-analytics.onrender.com/b",
   "longUrl": "https://example.com"
 }
 ```
 
-### Example: stats
-
+Example: stats
 ```bash
-curl http://localhost:3000/api/stats/b
+curl https://url-shortener-with-click-analytics.onrender.com/api/stats/b
 ```
 
-## Project structure
-
+Project structure
 ```
 src/
-├── routes/        → HTTP route definitions
-├── controllers/   → parse request, call services, send response
-├── services/      → business logic (validation, orchestration)
-├── db/            → pool + SQL repositories only
-├── middleware/    → centralized error handling
-├── utils/         → base62 encoding, URL validation, errors
-└── server.js      → entry point
+├── routes/        # HTTP route definitions
+├── controllers/   # parse request, call services, send response
+├── services/      # business logic (validation, orchestration)
+├── db/            # pool + SQL repositories
+├── middleware/    # error handling, request parsing
+├── utils/         # base62 encoding, URL validation, helpers
+└── server.js      # app entry point
 public/
-└── index.html     → web UI (vanilla HTML/CSS/JS, served at GET /)
+└── index.html     # web UI (served at GET /)
+postman/
+└── shortly.postman_collection.json
+db/
+└── schema.sql
 ```
 
-## Database schema
+Database schema (overview)
+- urls: id (PK), short_code (unique), long_url, created_at
+- clicks: id (PK), url_id (FK → urls.id), referrer, user_agent, clicked_at
+- Index: (url_id, clicked_at) for efficient aggregation
 
-- **`urls`** — `short_code` (unique), `long_url`, timestamps
-- **`clicks`** — FK to `urls`, `referrer`, `user_agent`, `clicked_at`
-- **Index** on `(url_id, clicked_at)` for fast stats aggregation
+Implementation notes
+- Short codes are Base62-encoded auto-increment IDs (collision-free).
+- All SQL uses parameterized queries (pg) to prevent injection.
+- Analytics are aggregated by date and referrer for performant dashboards.
 
-Short codes are **Base62-encoded auto-increment IDs** — collision-free by construction.
+Testing
+- Use the provided Postman collection (postman/shortly.postman_collection.json). Set baseUrl to your local or deployed URL.
+- npm run test:db verifies DB setup.
 
-## Testing with Postman
+Deploy
+- Deploy anywhere that runs Node.js and can connect to PostgreSQL (Neon, Render, Heroku, etc.).
+- Example: Render
+  - Connect repo as a Web Service
+  - Build command: npm install
+  - Start command: npm start
+  - Set DATABASE_URL and BASE_URL in Render env
+  - Run db/schema.sql against your DB once
 
-Import `postman/shortly.postman_collection.json`. Set `baseUrl` to your local or deployed URL.
+Contributing
+- Pull requests welcome. Open an issue for larger changes first.
+- Keep changes small and focused; add tests where appropriate.
 
-## Deploy to Render
+License
+- Add your preferred license (e.g., MIT). Update LICENSE file as needed.
 
-1. Push this repo to GitHub
-2. [render.com](https://render.com) → New Web Service → connect repo
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Add environment variables: `DATABASE_URL`, `BASE_URL` (your Render URL), `PORT=3000`
-6. Run `db/schema.sql` in Neon if not already applied
-
-## Resume line
-
-Designed and deployed a REST API for URL shortening with click analytics using Node.js, Express, and PostgreSQL; implemented indexed schema design, parameterized queries, and per-day analytics aggregation.
+About / Resume line
+Designed and deployed a REST API for URL shortening with click analytics using Node.js, Express, and PostgreSQL; implemented indexed schema design, parameterized queries, Base62 short codes, and per-day analytics.
