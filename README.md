@@ -26,11 +26,16 @@ npm run test:db        # verify DB connection + tables
 | `PORT` | Server port (default `3000`) |
 | `BASE_URL` | Public base URL for generated short links |
 
+## Web UI
+
+Open `GET /` in a browser for a bit.ly-style page — paste a long URL to get a short link, then look up click analytics by short code.
+
 ## API endpoints
 
 | Method | Path | Status | Description |
 |--------|------|--------|-------------|
-| GET | `/` | 200 | API info / endpoint index |
+| GET | `/` | 200 | Web UI (HTML) |
+| GET | `/api` | 200 | API info / endpoint index |
 | GET | `/health` | 200 | Health check for deployment |
 | POST | `/api/shorten` | 201 | Create short URL from `{ "longUrl": "..." }` |
 | POST | `/api/shorten` | 400 | Invalid or missing URL |
@@ -70,7 +75,10 @@ src/
 ├── services/      → business logic (validation, orchestration)
 ├── db/            → pool + SQL repositories only
 ├── middleware/    → centralized error handling
-└── utils/         → base62 encoding, URL validation, errors
+├── utils/         → base62 encoding, URL validation, errors
+└── server.js      → entry point
+public/
+└── index.html     → web UI (vanilla HTML/CSS/JS, served at GET /)
 ```
 
 ## Database schema

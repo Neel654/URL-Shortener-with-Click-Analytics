@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const shortenRoutes = require('./routes/shorten.routes');
 const statsRoutes = require('./routes/stats.routes');
@@ -8,8 +9,9 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.status(200).json({
     name: 'Shortly',
     description: 'URL Shortener API with click analytics',

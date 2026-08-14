@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shortly — URL Shortener</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px;
+    }
+
+    .container { width: 100%; max-width: 640px; }
+
+    header { text-align: center; margin-bottom: 32px; }
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .tagline { color: #94a3b8; margin-top: 6px; font-size: 14px; }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .card h2 { font-size: 16px; color: #cbd5e1; margin-bottom: 16px; }
+
+    .field { display: flex; gap: 8px; }
+    input[type="text"] {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #f1f5f9;
+      font-size: 15px;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: #38bdf8; }
+    input[type="text"]::placeholder { color: #64748b; }
+
+    button {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      color: #0f172a;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      font-size: 14px;
+      display: none;
+    }
+
+    .result {
+      margin-top: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 10px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .result a {
+      color: #7dd3fc;
+      font-size: 16px;
+      word-break: break-all;
+      text-decoration: none;
+    }
+    .result a:hover { text-decoration: underline; }
+    .result .meta { color: #94a3b8; font-size: 13px; word-break: break-all; }
+
+    .section { margin-top: 24px; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .stat-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-box .value { font-size: 28px; font-weight: 800; color: #38bdf8; }
+    .stat-box .label { font-size: 12px; color: #94a3b8; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .full { grid-column: 1 / -1; }
+    .bar { text-align: left; }
+    .bar .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 14px; }
+    .bar .row span:last-child { color: #38bdf8; font-weight: 600; }
+
+    footer { margin-top: 40px; text-align: center; color: #64748b; font-size: 12px; }
+
+    @media (max-width: 520px) {
+      .field { flex-direction: column; }
+      .stat-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">Shortly</div>
+      <div class="tagline">Shorten links. Track every click.</div>
+    </header>
+
+    <section class="card">
+      <h2>Shorten a link</h2>
+      <div class="field">
+        <input type="text" id="longUrl" placeholder="Paste a long URL here…">
+        <button id="shortenBtn">Shorten</button>
+      </div>
+      <div class="error" id="error"></div>
+      <div class="result" id="result">
+        <a id="shortUrl" target="_blank" rel="noopener"></a>
+        <div class="meta" id="meta"></div>
+      </div>
+    </section>
+
+    <section class="card section">
+      <h2>Click analytics</h2>
+      <div class="field">
+        <input type="text" id="statsCode" placeholder="Enter a short code, e.g. ab3x">
+        <button id="statsBtn">View stats</button>
+      </div>
+      <div class="error" id="statsError"></div>
+      <div class="stat-grid" id="stats" style="display:none;">
+        <div class="stat-box">
+          <div class="value" id="statTotal">0</div>
+          <div class="label">Total clicks</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="statDays">0</div>
+          <div class="label">Days active</div>
+        </div>
+        <div class="stat-box full">
+          <div class="bar" id="statDaily"></div>
+        </div>
+        <div class="stat-box full">
+          <div class="bar" id="statReferrers"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>Shortly — URL Shortener API with Analytics &middot; Node.js + Express + PostgreSQL</footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    async function shorten() {
+      const input = $('longUrl');
+      const btn = $('shortenBtn');
+      $('error').style.display = 'none';
+      $('result').style.display = 'none';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ longUrl: input.value.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+        $('shortUrl').textContent = data.shortUrl;
+        $('shortUrl').href = data.shortUrl;
+        $('meta').textContent = `${data.shortCode} → ${data.longUrl}`;
+        $('result').style.display = 'flex';
+        $('statsCode').value = data.shortCode;
+      } catch (err) {
+        $('error').textContent = err.message;
+        $('error').style.display = 'block';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function loadStats() {
+      const code = $('statsCode').value.trim();
+      $('statsError').style.display = 'none';
+      if (!code) return;
+
+      try {
+        const res = await fetch(`/api/stats/${encodeURIComponent(code)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Not found');
+
+        $('statTotal').textContent = data.totalClicks;
+        $('statDays').textContent = data.clicksByDay.length;
+
+        $('statDaily').innerHTML = '<div class="row"><span>Last 7 days</span><span>count</span></div>' +
+          data.clicksByDay.slice(0, 7).map((d) =>
+            `<div class="row"><span>${d.date}</span><span>${d.count}</span></div>`
+          ).join('') || '<div class="row"><span>No clicks yet</span><span>—</span></div>';
+
+        $('statReferrers').innerHTML = '<div class="row"><span>Top referrers</span><span>count</span></div>' +
+          data.topReferrers.map((r) =>
+            `<div class="row"><span>${r.referrer}</span><span>${r.count}</span></div>`
+          ).join('');
+
+        $('stats').style.display = 'grid';
+      } catch (err) {
+        $('statsError').textContent = err.message;
+        $('statsError').style.display = 'block';
+      }
+    }
+
+    $('shortenBtn').addEventListener('click', shorten);
+    $('longUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') shorten(); });
+    $('statsBtn').addEventListener('click', loadStats);
+    $('statsCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadStats(); });
+  </script>
+</body>
+</html>
